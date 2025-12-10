@@ -21,8 +21,12 @@
   },
   "homepage": "https://github.com/JonahThurston/HeartsAi#readme",
   "devDependencies": {
+    "@types/lodash.shuffle": "^4.2.9",
     "@types/node": "^24.10.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "lodash.shuffle": "^4.2.0"
   }
 }
