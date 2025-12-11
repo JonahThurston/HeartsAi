@@ -28,33 +28,55 @@ export default class Player {
     }
   }
 
-  public getPlay(thinkingTime: number): string {
+  public getPlay(
+    heartsPlayed: boolean,
+    ledSuit: string,
+    isLeadPlayer: boolean,
+    thinkingTime: number
+  ): string {
+    const validCards = this.getValidCards(heartsPlayed, ledSuit, isLeadPlayer);
     if (!this.isAi) {
-      return this.getHumanPlay();
+      return this.getHumanPlay(validCards);
     }
-    return this.getAiPlay(thinkingTime);
+    return this.getAiPlay(validCards, thinkingTime);
   }
 
-  private getHumanPlay(): string {
-    console.log("current hand: ");
-    console.log(this.hand);
+  private getValidCards(
+    heartsPlayed: boolean,
+    ledSuit: string,
+    isLeadPlayer: boolean
+  ) {
+    let validCards = [...this.hand];
+    if (isLeadPlayer) {
+      if (!heartsPlayed) {
+        validCards = validCards.filter((card) => card[0] !== "h");
+      }
+    } else {
+      if (validCards.some((card) => card[0] === ledSuit)) {
+        validCards = validCards.filter((card) => card[0] != ledSuit);
+      }
+    }
+    return validCards;
+  }
 
+  private getHumanPlay(validCards: string[]): string {
     let givenValidPlay = false;
-    let givenCard = "";
+    let gotCard = "";
     while (!givenValidPlay) {
-      const givenCard = myPrompt("select a card: ");
-      if (!this.hand.includes(givenCard)) {
-        console.log("please select a card from your hand");
-        console.log(this.hand);
+      console.log("Valid plays: ");
+      console.log(validCards);
+      gotCard = myPrompt("type a valid play: ");
+      if (!validCards.includes(gotCard)) {
+        continue;
       } else {
-        console.log(`played: ${givenCard}`);
         givenValidPlay = true;
       }
     }
-    return givenCard;
+    console.log(`played: ${gotCard}`);
+    return gotCard;
   }
 
-  private getAiPlay(thinkingTime: number): string {
+  private getAiPlay(validCards: string[], thinkingTime: number): string {
     throw new Error("Method not implemented.");
   }
 }

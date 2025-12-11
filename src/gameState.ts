@@ -114,7 +114,12 @@ export default class GameState {
     for (let i = 0; i < this.players.length; i++) {
       console.log(`Player ${this.whoseTurn}s turn`);
       const currentPlayer = this.players[this.whoseTurn];
-      const playedCard = currentPlayer.getPlay(this.thinkingTime);
+      const playedCard = currentPlayer.getPlay(
+        this.heartsPlayed,
+        this.ledSuit,
+        i === 0,
+        this.thinkingTime
+      );
       if (i === 0) {
         losingCardSoFar = playedCard;
         loserSoFar = currentPlayer;
