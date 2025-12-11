@@ -36,6 +36,9 @@ export default class Player {
   }
 
   private getHumanPlay(): string {
+    console.log("current hand: ");
+    console.log(this.hand);
+
     let givenValidPlay = false;
     let givenCard = "";
     while (!givenValidPlay) {
