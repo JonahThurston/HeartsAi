@@ -7,6 +7,7 @@ import {
 } from "./PlayerLogic.js";
 import {
   initializePublicData,
+  inputAiHand,
   type PublicKnowledge,
 } from "./PublicGameData.js";
 
@@ -82,7 +83,11 @@ function initializeHand(players: Player[], gameData: PublicKnowledge) {
   gameData.dealerThisHand = (gameData.dealerThisHand + 1) % players.length;
   gameData.leadPlayerThisTrick = gameData.dealerThisHand;
 
-  // TODO initialize AI hands
+  for (const player of players) {
+    if (player.isAi) {
+      inputAiHand(player, players.length);
+    }
+  }
 }
 
 function runHand(
