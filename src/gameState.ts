@@ -109,36 +109,60 @@ export default class GameState {
   }
 
   public runTrick() {
+    let loserSoFar: Player = this.players[this.whoseTurn];
+    let losingCardSoFar: string = "";
     for (let i = 0; i < this.players.length; i++) {
       const currentPlayer = this.players[this.whoseTurn];
       const playedCard = currentPlayer.getPlay(this.thinkingTime);
+      if (i === 0) {
+        losingCardSoFar = playedCard;
+        loserSoFar = currentPlayer;
+        this.ledSuit = playedCard[0];
+      } else {
+        if (this.isLoserPlay(playedCard, losingCardSoFar)) {
+          loserSoFar = currentPlayer;
+          losingCardSoFar = playedCard;
+        }
+      }
       this.doPlay(currentPlayer, playedCard, i === 0);
       this.whoseTurn = (this.whoseTurn + 1) % this.players.length;
     }
-    // TODO: trick loser takes all cards in current trick
+    loserSoFar.takenCards = loserSoFar.takenCards.concat(this.currentTrick);
+  }
+
+  private isLoserPlay(cardToCheck: string, worstSoFar: string) {
+    const suit = cardToCheck[0];
+    if (suit !== this.ledSuit) {
+      return false;
+    }
+
+    const numberToCheck = cardToCheck[1];
+    const worstNumSoFar = worstSoFar[1];
+    if (numberToCheck > worstNumSoFar) {
+      return true;
+    }
+
+    return false;
   }
 
   public doPlay(player: Player, card: string, leadPlayer: boolean) {
     const suit = card[0];
-    // remove card from hand
+
     player.hand = player.hand.filter((item) => item !== card);
-    // put card on trick
     this.currentTrick.push(card);
-    // set lead suit
-    if (leadPlayer) {
-      this.ledSuit = suit;
-    } else {
-      if (suit !== this.ledSuit) {
-        // TODO: see if we need to add ledSuit to known out-of suits
-      }
+
+    if (suit !== this.ledSuit) {
+      player.checkKnownSuit(suit);
     }
-    // set if hearts are allowed to be led
-    if (suit === "h") {
+
+    if (!this.heartsPlayed && suit === "h") {
       this.heartsPlayed = true;
     }
   }
 
   public applyHandPoints() {
-    throw new Error("Method not implemented.");
+    for (const player of this.players) {
+      player.applyHandPoints();
+    }
   }
 }

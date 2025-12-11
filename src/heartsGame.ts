@@ -28,7 +28,6 @@ export class HeartsGame {
     while (this.gameState.players[0].hand.length) {
       this.gameState.runTrick();
     }
-
     this.gameState.applyHandPoints();
   }
 
