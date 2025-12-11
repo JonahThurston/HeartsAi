@@ -23,10 +23,12 @@
   "devDependencies": {
     "@types/lodash.shuffle": "^4.2.9",
     "@types/node": "^24.10.1",
+    "@types/prompt-sync": "^4.2.3",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "lodash.shuffle": "^4.2.0"
+    "lodash.shuffle": "^4.2.0",
+    "prompt-sync": "^4.2.0"
   }
 }

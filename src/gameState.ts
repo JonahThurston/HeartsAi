@@ -152,7 +152,7 @@ export default class GameState {
     this.currentTrick.push(card);
 
     if (suit !== this.ledSuit) {
-      player.checkKnownSuit(suit);
+      player.reportDoneSuit(suit);
     }
 
     if (!this.heartsPlayed && suit === "h") {
