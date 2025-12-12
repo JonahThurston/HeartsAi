@@ -92,3 +92,27 @@ export function getDeck(numPlayers: number): Card[] {
     throw new Error("only supports 3-5 players");
   }
 }
+
+export function cardFromString(userString: string): Card | undefined {
+  const trimmed = userString.trim().toLowerCase();
+  const suit = trimmed[0] as Suit;
+  const rank = trimmed.slice(1) as Card["rank"];
+  const suitValid =
+    suit === "h" || suit === "d" || suit === "c" || suit === "s";
+  const rankValid =
+    rank === "10" ||
+    rank === "j" ||
+    rank === "q" ||
+    rank === "k" ||
+    rank === "a" ||
+    (rank.length === 1 && rank >= "2" && rank <= "9");
+  if (suitValid && rankValid) {
+    return {
+      rank: rank,
+      suit: suit,
+    };
+  }
+
+  console.log(`Invalid card string. suit: ${suit}. rank ${rank}`);
+  return undefined;
+}

@@ -1,4 +1,4 @@
-import { type Suit, type Card } from "./Cards.js";
+import { type Suit, type Card, cardFromString } from "./Cards.js";
 import type { Player } from "./PlayerLogic.js";
 import prompt from "prompt-sync";
 const PROMPT = prompt({ sigint: true });
@@ -57,28 +57,16 @@ export function inputAiHand(player: Player, numPlayers: number) {
 
   for (let i = 0; i < handSize; i++) {
     let givenGoodInput = false;
+    let givenCard: Card | undefined = undefined;
     while (!givenGoodInput) {
       const userString = PROMPT(
         `enter AI player ${player.publicData.id}\'s hand card ([suit][rank]): `
       );
-      const trimmed = userString.trim().toLowerCase();
-      const suit = trimmed[0] as Suit;
-      const rank = trimmed.slice(1) as Card["rank"];
-      const suitValid = suit === "h" || suit === "d" || suit === "c" || suit === "s";
-      const rankValid =
-        rank === "10" ||
-        rank === "j" ||
-        rank === "q" ||
-        rank === "k" ||
-        rank === "a" ||
-        (rank.length === 1 && rank >= "2" && rank <= "9");
-
-      if (suitValid && rankValid) {
-        player.hand.push({ suit, rank });
+      const givenCard = cardFromString(userString);
+      if (givenCard !== undefined) {
         givenGoodInput = true;
-      } else {
-        console.log("Invalid card. Format is [suit][rank], e.g., s10 or hq.");
       }
     }
+    player.hand.push(givenCard!);
   }
 }

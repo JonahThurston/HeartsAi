@@ -1,4 +1,4 @@
-import type { Card, Suit } from "./Cards.js";
+import { cardFromString, type Card, type Suit } from "./Cards.js";
 import type { PublicKnowledge, PublicPlayerData } from "./PublicGameData.js";
 import prompt from "prompt-sync";
 const PROMPT = prompt({ sigint: true });
@@ -44,21 +44,13 @@ function getHumanTurn(player: Player, gameData: PublicKnowledge): Card {
       console.log(gameData);
       continue;
     }
-    const trimmed = userString.trim().toLowerCase();
-    const  = trimmed[0] as Suit;
-    const rank = trimmed.slice(1) as Card["rank"];
-    const suitValid = suit === "h" || suit === "d" || suit === "c" || suit === "s";
-    const rankValid =
-      rank === "10" ||
-      rank === "j" ||
-      rank === "q" ||
-      rank === "k" ||
-      rank === "a" ||
-      (rank.length === 1 && rank >= "2" && rank <= "9");
-    const givenCard = gameData.cardsUnplayedThisHand.find(
-      (card) => card.rank === givenRank && card.suit === givenSuit
-    );
-    if (givenCard === undefined) {
+    givenCard = cardFromString(userString);
+    if (
+      givenCard === undefined ||
+      !gameData.cardsUnplayedThisHand.some(
+        (card) => card.rank === givenCard?.rank && card.suit === givenCard.suit
+      )
+    ) {
       console.log(
         "could not find card with that rank and suit in list of unplayed cards. Try again. Format is like s4 for the four of spades"
       );
