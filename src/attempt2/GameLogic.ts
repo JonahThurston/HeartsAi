@@ -1,4 +1,4 @@
-import { getDeck, rankToValue, type Rank } from "./Cards.js";
+import { getDeck, rankToValue, type Card, type Rank } from "./Cards.js";
 import {
   getPlayerTurn,
   initializePlayers,
@@ -20,10 +20,11 @@ export function gameOver(players: Player[], goal: number): boolean {
   return false;
 }
 
-function runTrick(
+export function runTrick(
   players: Player[],
   gameData: PublicKnowledge,
-  THINKING_TIME: number
+  THINKING_TIME: number,
+  simulationMode: boolean = false
 ) {
   //  for each player starting from the lead
   //    get a play from that player
@@ -40,7 +41,12 @@ function runTrick(
   let turnIndex = gameData.leadPlayerThisTrick;
   for (let i = 0; i < players.length; i++) {
     const currentPlayer = players[turnIndex];
-    const card = getPlayerTurn(currentPlayer, gameData, THINKING_TIME);
+    const card = getPlayerTurn(
+      currentPlayer,
+      gameData,
+      THINKING_TIME,
+      simulationMode
+    );
 
     gameData.cardsPlayedThisTrick.push(card);
     gameData.cardsUnplayedThisHand = gameData.cardsUnplayedThisHand.filter(
@@ -121,7 +127,7 @@ function runHand(
   printScore(players);
 }
 
-function applyHandPoints(players: Player[], gameData: PublicKnowledge) {
+export function applyHandPoints(players: Player[], gameData: PublicKnowledge) {
   for (const player of players) {
     let playerHandPoints = 0;
     for (const card of player.publicData.takenCardsThisHand) {
