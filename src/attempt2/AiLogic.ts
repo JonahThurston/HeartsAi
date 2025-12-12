@@ -20,18 +20,25 @@ export function getValidMoves(
   player: Player,
   gameData: PublicKnowledge
 ): Card[] {
+  if (player.hand.length === 0) {
+    console.log(`player ${player.publicData.id} has no hand????`);
+    throw new Error("die?");
+    return [];
+  }
+
   let cardsToReturn: Card[] = [];
   // first player
   if (
     gameData.playerData[gameData.leadPlayerThisTrick].id ===
     player.publicData.id
   ) {
-    // okay to lead with hearts
+    // if hearts not yet broken, prefer to avoid leading hearts unless only hearts remain
     if (!gameData.heartsPlayedThisHand) {
       cardsToReturn = player.hand.filter((card) => card.suit !== "h");
-    }
-    // cant lead with hearts
-    else {
+      if (cardsToReturn.length === 0) {
+        cardsToReturn = [...player.hand];
+      }
+    } else {
       cardsToReturn = [...player.hand];
     }
   }
@@ -54,30 +61,66 @@ export function getValidMoves(
 
   if (cardsToReturn.length === 0) {
     console.log(`player ${player.publicData.id} has no valid moves????`);
+    throw new Error("wtf?");
   }
   return cardsToReturn;
 }
 
-function evalNode(node: ActionNode, parentVisits: number) {
+function evalNode(node: ActionNode, parentVisits: number): number {
   const C = 10;
-  return (
-    node.totalScoreSoFar / node.numberTimesSelected -
-    C * Math.sqrt(Math.log(parentVisits) / node.numberTimesSelected)
-  );
+
+  // Replace any zero divisors with 1
+  const visits = node.numberTimesSelected === 0 ? 1 : node.numberTimesSelected;
+
+  // Guard log(0) → -Infinity
+  const safeParentVisits = parentVisits <= 1 ? 1 : parentVisits;
+  const exploration = Math.sqrt(Math.log(safeParentVisits) / visits);
+
+  const exploitation = node.totalScoreSoFar / visits;
+
+  const score = exploitation - C * exploration;
+
+  // Final guard: never return NaN or Infinity
+  if (!Number.isFinite(score)) {
+    return 0; // or some fallback value appropriate for your MCTS
+  }
+
+  return score;
 }
 
-export function selectActionNode(nodes: ActionNode[], parentVisits: number) {
+export function selectActionNode(
+  nodes: ActionNode[],
+  parentVisits: number
+): ActionNode {
+  if (nodes.length === 0) {
+    throw new Error(
+      "selectActionNode: cannot select from an empty list of nodes"
+    );
+  }
+
   let bestActions: ActionNode[] = [];
-  const lowestValSoFar = Infinity;
+  let bestScore = Infinity;
+
   for (const node of nodes) {
     const score = evalNode(node, parentVisits);
-    if (score < lowestValSoFar) {
+
+    if (score < bestScore) {
+      // Found a new best score: reset list
+      bestScore = score;
       bestActions = [node];
-    } else if (score === lowestValSoFar) {
+    } else if (score === bestScore) {
+      // Same as current best: add to list of candidates
       bestActions.push(node);
     }
   }
-  return bestActions[Math.floor(Math.random() * bestActions.length)];
+
+  if (bestActions.length === 0) {
+    throw new Error("you lied to me");
+  }
+
+  // At this point bestActions is guaranteed non-empty
+  const idx = Math.floor(Math.random() * bestActions.length);
+  return bestActions[idx];
 }
 
 export function simulateActionFromState(
@@ -88,20 +131,36 @@ export function simulateActionFromState(
   // make copy player array
   const playerDataCopies: PublicPlayerData[] = [];
   for (const playerData of gameData.playerData) {
-    playerDataCopies.push({ ...playerData });
+    playerDataCopies.push({
+      ...playerData,
+      reportedDoneSuitsThisHand: [...playerData.reportedDoneSuitsThisHand],
+      takenCardsThisHand: [...playerData.takenCardsThisHand],
+    });
   }
   const playersCopy: Player[] = [];
   for (const data of playerDataCopies) {
-    playersCopy.push({
-      publicData: data,
-      hand: [],
-      isAi: true,
-    });
+    if (data.id === player.publicData.id) {
+      playersCopy.push({
+        publicData: data,
+        hand: [...player.hand],
+        isAi: true,
+      });
+    } else {
+      playersCopy.push({
+        publicData: data,
+        hand: [],
+        isAi: true,
+      });
+    }
   }
 
   //make copy game state
-  const gameCopy: PublicKnowledge = { ...gameData };
-  gameCopy.playerData = playerDataCopies;
+  const gameCopy: PublicKnowledge = {
+    ...gameData,
+    playerData: playerDataCopies,
+    cardsPlayedThisTrick: [...gameData.cardsPlayedThisTrick],
+    cardsUnplayedThisHand: [...gameData.cardsUnplayedThisHand],
+  };
 
   //make copy of self
   const playerDataCopy = playerDataCopies.find(
@@ -112,15 +171,24 @@ export function simulateActionFromState(
   }
 
   // randomly deal remaining deck to other players
-  let remainingDeck = gameData.cardsUnplayedThisHand.filter(
-    (card) => !player.hand.includes(card)
+  let remainingDeck = gameCopy.cardsUnplayedThisHand.filter(
+    (card) =>
+      !player.hand.some(
+        (handCard) =>
+          handCard.rank === card.rank && handCard.suit === card.suit
+      )
   );
   remainingDeck = shuffle(remainingDeck);
-  let dealIndex = 0;
+  const recipientIndexes = playersCopy
+    .map((p, idx) => ({ p, idx }))
+    .filter(({ p }) => p.publicData.id !== player.publicData.id)
+    .map(({ idx }) => idx);
+
+  let recipient = 0;
   for (const card of remainingDeck) {
-    if (playersCopy[dealIndex].publicData.id !== player.publicData.id) {
-      playersCopy[dealIndex].hand.push(card);
-    }
+    const idx = recipientIndexes[recipient % recipientIndexes.length];
+    playersCopy[idx].hand.push(card);
+    recipient += 1;
   }
 
   // simulate the rest of the trick we're on, if AI is not the first player
@@ -138,6 +206,9 @@ export function simulateActionFromState(
 
   // simulate rest of hand if we have to
   while (gameCopy.cardsUnplayedThisHand.length !== 0) {
+    console.log(
+      `${gameCopy.cardsUnplayedThisHand.length} cards left to play for this sim`
+    );
     runTrick(playersCopy, gameCopy, -1, true);
   }
 
@@ -151,64 +222,70 @@ function simRestOfTrickWithStartCard(
   selectedCard: Card,
   playersCopy: Player[]
 ) {
-  const cardsOfLedSuit = gameCopy.cardsPlayedThisTrick.filter(
-    (card) => card.suit === gameCopy.suitLeadingThisTrick
-  );
+  const playerCount = playersCopy.length;
+  const alreadyPlayed = gameCopy.cardsPlayedThisTrick.length;
+  const leadIndex = gameCopy.leadPlayerThisTrick;
+
+  // Reconstruct current losing player from the already-played cards in turn order.
+  let loserSoFar = playersCopy[leadIndex];
   let worstRankSoFar: Rank = "2";
-  for (const card of cardsOfLedSuit) {
-    if (rankToValue(card.rank) >= rankToValue(worstRankSoFar)) {
-      worstRankSoFar = card.rank;
+  if (gameCopy.suitLeadingThisTrick) {
+    for (let i = 0; i < alreadyPlayed; i++) {
+      const card = gameCopy.cardsPlayedThisTrick[i];
+      const playerIdx = (leadIndex + i) % playerCount;
+      if (
+        card.suit === gameCopy.suitLeadingThisTrick &&
+        rankToValue(card.rank) >= rankToValue(worstRankSoFar)
+      ) {
+        worstRankSoFar = card.rank;
+        loserSoFar = playersCopy[playerIdx];
+      }
     }
   }
-  let loserSoFar =
-    playersCopy[
-      gameCopy.cardsPlayedThisTrick.findIndex(
-        (card) =>
-          card.rank === worstRankSoFar &&
-          card.suit === gameCopy.suitLeadingThisTrick
-      )
-    ];
+
   const playerIndex = playersCopy.findIndex(
-    (player) => player.publicData.id === playerDataCopy.id
+    (p) => p.publicData.id === playerDataCopy.id
   );
-  let turnIndex =
-    (gameCopy.leadPlayerThisTrick + playerIndex) % gameCopy.playerData.length;
-  let forcedFirstTurnDone: boolean = false;
-  for (let i = playerIndex; i < playersCopy.length; i++) {
+  let turnIndex = (leadIndex + alreadyPlayed) % playerCount;
+  if (turnIndex !== playerIndex) {
+    throw new Error(
+      "simulateActionFromState: expected acting player to be next to play"
+    );
+  }
+
+  let forcedFirstTurnDone = false;
+  const turnsToPlay = playerCount - alreadyPlayed;
+  for (let i = 0; i < turnsToPlay; i++) {
     const currentPlayer = playersCopy[turnIndex];
-    let card: Card;
-    if (forcedFirstTurnDone) {
-      card = getPlayerTurn(currentPlayer, gameCopy, -1, true);
-    } else {
-      card = selectedCard;
-      forcedFirstTurnDone = true;
-    }
+    const card = forcedFirstTurnDone
+      ? getPlayerTurn(currentPlayer, gameCopy, -1, true)
+      : selectedCard;
+    forcedFirstTurnDone = true;
 
     gameCopy.cardsPlayedThisTrick.push(card);
     gameCopy.cardsUnplayedThisHand = gameCopy.cardsUnplayedThisHand.filter(
       (item) => item.rank !== card.rank || item.suit !== card.suit
     );
+    currentPlayer.hand = currentPlayer.hand.filter(
+      (item) => item.rank !== card.rank || item.suit !== card.suit
+    );
 
-    if (i === 0) {
+    if (i === 0 && alreadyPlayed === 0) {
       gameCopy.suitLeadingThisTrick = card.suit;
-      worstRankSoFar = card.rank;
+    }
+
+    if (card.suit === gameCopy.suitLeadingThisTrick) {
+      if (rankToValue(card.rank) >= rankToValue(worstRankSoFar)) {
+        worstRankSoFar = card.rank;
+        loserSoFar = currentPlayer;
+      }
       if (card.suit === "s" && card.rank === "q") {
         gameCopy.heartsPlayedThisHand = true;
       }
     } else {
-      if (card.suit === gameCopy.suitLeadingThisTrick) {
-        if (rankToValue(card.rank) >= rankToValue(worstRankSoFar)) {
-          worstRankSoFar = card.rank;
-          loserSoFar = currentPlayer;
-        }
-        if (card.suit === "s" && card.rank === "q") {
-          gameCopy.heartsPlayedThisHand = true;
-        }
-      } else {
-        reportSuitDone(currentPlayer, gameCopy.suitLeadingThisTrick, true);
-        if (card.suit === "h" || (card.suit === "s" && card.rank === "q")) {
-          gameCopy.heartsPlayedThisHand = true;
-        }
+      reportSuitDone(currentPlayer, gameCopy.suitLeadingThisTrick, true);
+      if (card.suit === "h" || (card.suit === "s" && card.rank === "q")) {
+        gameCopy.heartsPlayedThisHand = true;
       }
     }
 

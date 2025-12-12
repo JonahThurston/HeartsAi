@@ -80,13 +80,13 @@ const FULL_DECK: Card[] = [
 export function getDeck(numPlayers: number): Card[] {
   if (numPlayers === 3) {
     return [...FULL_DECK].filter(
-      (card) => card.rank !== "2" && card.suit !== "d"
+      (card) => !(card.rank === "2" && card.suit === "d")
     );
   } else if (numPlayers === 4) {
     return [...FULL_DECK];
   } else if (numPlayers === 5) {
     return [...FULL_DECK].filter(
-      (card) => card.rank !== "2" && card.suit !== "c"
+      (card) => !(card.rank === "2" && card.suit === "c")
     );
   } else {
     throw new Error("only supports 3-5 players");

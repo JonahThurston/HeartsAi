@@ -93,6 +93,7 @@ function getAiTurn(
 
   const actionNodes: ActionNode[] = [];
   for (const card of validCards) {
+    // console.log(`pushing card ${card.suit}${card.rank}`);
     actionNodes.push({
       selectedCard: card,
       numberTimesSelected: 1,
@@ -141,7 +142,13 @@ export function getPlayerTurn(
     }
   }
   const validMoves = getValidMoves(player, gameData);
-  return validMoves[Math.floor(Math.random() * validMoves.length)];
+  if (validMoves.length === 0) {
+    console.log("no valid moves but from out here?");
+    throw new Error("kys ig");
+  } else {
+    // console.log(validMoves.toString());
+    return validMoves[Math.floor(Math.random() * validMoves.length)];
+  }
 }
 
 export function reportSuitDone(

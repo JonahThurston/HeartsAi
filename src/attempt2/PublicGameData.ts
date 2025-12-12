@@ -65,9 +65,10 @@ export function inputAiHand(player: Player, numPlayers: number) {
       );
       const givenCard = cardFromString(userString);
       if (givenCard !== undefined) {
+        // console.log(`pushing card ${givenCard.suit}${givenCard.rank}`);
+        player.hand.push(givenCard);
         givenGoodInput = true;
       }
     }
-    player.hand.push(givenCard!);
   }
 }

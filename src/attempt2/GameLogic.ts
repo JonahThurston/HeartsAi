@@ -47,9 +47,15 @@ export function runTrick(
       THINKING_TIME,
       simulationMode
     );
+    // if (simulationMode) {
+    //   console.log(`selected card: ${card}`);
+    // }
 
     gameData.cardsPlayedThisTrick.push(card);
     gameData.cardsUnplayedThisHand = gameData.cardsUnplayedThisHand.filter(
+      (item) => item.rank !== card.rank || item.suit !== card.suit
+    );
+    currentPlayer.hand = currentPlayer.hand.filter(
       (item) => item.rank !== card.rank || item.suit !== card.suit
     );
 
