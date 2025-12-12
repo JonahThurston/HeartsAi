@@ -99,6 +99,9 @@ function runHand(
     runTrick(players, gameData, THINKING_TIME);
   }
   applyHandPoints(players, gameData);
+
+  console.log("Hand over, current score is:");
+  printScore(players);
 }
 
 function applyHandPoints(players: Player[], gameData: PublicKnowledge) {
@@ -132,5 +135,6 @@ export function runGame(
     initializeHand(players, gameData);
     runHand(players, gameData, THINKING_TIME);
   }
+  console.log("game over!!! Final Scores:");
   printScore(players);
 }

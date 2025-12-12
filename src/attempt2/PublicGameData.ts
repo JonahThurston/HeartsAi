@@ -8,7 +8,6 @@ export interface PublicPlayerData {
   points: number;
   reportedDoneSuitsThisTrick: Suit[];
   takenCardsThisHand: Card[];
-  // cardsGiven: Card[]   // Upcoming feature for swapping
 }
 
 export interface PublicKnowledge {

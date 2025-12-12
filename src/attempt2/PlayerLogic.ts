@@ -7,6 +7,7 @@ export interface Player {
   publicData: PublicPlayerData;
   isAi: boolean;
   hand: Card[]; // only AI agents will ever bother with this field. humans can just look at thier physical cards.
+  // cardsGiven: Card[]   // Upcoming feature for teaching AI swapping
 }
 
 export function initializePlayers(playerSettings: boolean[]): Player[] {
