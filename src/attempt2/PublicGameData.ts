@@ -6,7 +6,7 @@ const PROMPT = prompt({ sigint: true });
 export interface PublicPlayerData {
   id: string;
   points: number;
-  reportedDoneSuitsThisTrick: Suit[];
+  reportedDoneSuitsThisHand: Suit[];
   takenCardsThisHand: Card[];
 }
 
@@ -19,6 +19,7 @@ export interface PublicKnowledge {
 
   dealerThisHand: number;
   cardsUnplayedThisHand: Card[];
+  heartsPlayedThisHand: boolean;
 }
 
 export function initializePublicData(players: Player[]): PublicKnowledge {
@@ -29,11 +30,12 @@ export function initializePublicData(players: Player[]): PublicKnowledge {
 
   return {
     playerData: playerDataArray,
-    leadPlayerThisTrick: 0,
+    leadPlayerThisTrick: -1,
     suitLeadingThisTrick: undefined,
     cardsPlayedThisTrick: [],
-    dealerThisHand: 0,
+    dealerThisHand: -1,
     cardsUnplayedThisHand: [],
+    heartsPlayedThisHand: false,
   };
 }
 

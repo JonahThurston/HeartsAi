@@ -1,4 +1,4 @@
-import { getDeck } from "./Cards.js";
+import { getDeck, rankToValue, type Rank } from "./Cards.js";
 import {
   getPlayerTurn,
   initializePlayers,
@@ -36,7 +36,7 @@ function runTrick(
   //  put cards in losers taken, set loser to new lead
   //  reset trick data
   let loserSoFar = players[gameData.leadPlayerThisTrick];
-  let worstRankSoFar = "-1";
+  let worstRankSoFar: Rank = "2";
   let turnIndex = gameData.leadPlayerThisTrick;
   for (let i = 0; i < players.length; i++) {
     const currentPlayer = players[turnIndex];
@@ -44,25 +44,36 @@ function runTrick(
 
     gameData.cardsPlayedThisTrick.push(card);
     gameData.cardsUnplayedThisHand = gameData.cardsUnplayedThisHand.filter(
-      (item) => item.rank !== card.rank && item.suit !== card.suit
+      (item) => item.rank !== card.rank || item.suit !== card.suit
     );
 
     if (i === 0) {
       gameData.suitLeadingThisTrick = card.suit;
+      worstRankSoFar = card.rank;
+      if (card.suit === "s" && card.rank === "q") {
+        gameData.heartsPlayedThisHand = true;
+      }
     } else {
       if (card.suit === gameData.suitLeadingThisTrick) {
-        if (card.rank > worstRankSoFar) {
+        if (rankToValue(card.rank) >= rankToValue(worstRankSoFar)) {
           worstRankSoFar = card.rank;
           loserSoFar = currentPlayer;
         }
+        if (card.suit === "s" && card.rank === "q") {
+          gameData.heartsPlayedThisHand = true;
+        }
       } else {
         reportSuitDone(currentPlayer, gameData.suitLeadingThisTrick);
+        if (card.suit === "h" || (card.suit === "s" && card.rank === "q")) {
+          gameData.heartsPlayedThisHand = true;
+        }
       }
     }
 
     turnIndex = (turnIndex + 1) % players.length;
   }
 
+  console.log(`trick over. Player ${loserSoFar.publicData.id} takes trick`);
   loserSoFar.publicData.takenCardsThisHand =
     loserSoFar.publicData.takenCardsThisHand.concat(
       gameData.cardsPlayedThisTrick
@@ -80,8 +91,14 @@ function runTrick(
 
 function initializeHand(players: Player[], gameData: PublicKnowledge) {
   gameData.cardsUnplayedThisHand = getDeck(players.length);
+  gameData.heartsPlayedThisHand = false;
   gameData.dealerThisHand = (gameData.dealerThisHand + 1) % players.length;
   gameData.leadPlayerThisTrick = gameData.dealerThisHand;
+
+  for (const player of players) {
+    player.publicData.reportedDoneSuitsThisHand = [];
+    player.publicData.takenCardsThisHand = [];
+  }
 
   for (const player of players) {
     if (player.isAi) {
@@ -106,13 +123,24 @@ function runHand(
 
 function applyHandPoints(players: Player[], gameData: PublicKnowledge) {
   for (const player of players) {
+    let playerHandPoints = 0;
     for (const card of player.publicData.takenCardsThisHand) {
       if (card.suit === "h") {
-        player.publicData.points += 1;
+        playerHandPoints += 1;
       } else if (card.suit === "s" && card.rank === "q") {
-        player.publicData.points += 13;
+        playerHandPoints += 13;
       }
     }
+
+    if (playerHandPoints === 26) {
+      console.log(`${player.publicData.id} just shot the moon!`);
+      for (const otherPlayer of players) {
+        if (otherPlayer.publicData.id !== player.publicData.id) {
+          otherPlayer.publicData.points += 26;
+        }
+      }
+    }
+    player.publicData.points += playerHandPoints;
   }
 }
 

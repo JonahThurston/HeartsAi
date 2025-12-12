@@ -24,7 +24,7 @@ export function initializePlayers(playerSettings: boolean[]): Player[] {
       publicData: {
         id: userName,
         points: 0,
-        reportedDoneSuitsThisTrick: [],
+        reportedDoneSuitsThisHand: [],
         takenCardsThisHand: [],
       },
       isAi: playerIsAi,
@@ -77,9 +77,9 @@ export function getPlayerTurn(
   THINKING_TIME: number
 ): Card {
   if (player.isAi) {
-    return getHumanTurn(player, gameData);
-  } else {
     return getAiTurn(player, gameData, THINKING_TIME);
+  } else {
+    return getHumanTurn(player, gameData);
   }
 }
 
@@ -93,7 +93,8 @@ export function reportSuitDone(
     );
   }
 
-  if (!reportingPlayer.publicData.reportedDoneSuitsThisTrick.includes(suit)) {
-    reportingPlayer.publicData.reportedDoneSuitsThisTrick.push(suit);
+  if (!reportingPlayer.publicData.reportedDoneSuitsThisHand.includes(suit)) {
+    reportingPlayer.publicData.reportedDoneSuitsThisHand.push(suit);
+    console.log(`player ${reportingPlayer.publicData.id} is out of ${suit}s!`);
   }
 }
