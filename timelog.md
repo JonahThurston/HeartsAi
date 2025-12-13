@@ -4,3 +4,5 @@
 - 12/10: 2 hours working on building environment
 - 12/11: 6 hours redoing environment
 - 12/12: 8 hours making AI
+- 12/12 (later that night): 1 hour playing hearts against friends and hotfixing
+- 12/13: 1 hour writing report

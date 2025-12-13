@@ -86,7 +86,9 @@ export function getDeck(numPlayers: number): Card[] {
     return [...FULL_DECK];
   } else if (numPlayers === 5) {
     return [...FULL_DECK].filter(
-      (card) => !(card.rank === "2" && card.suit === "c")
+      (card) =>
+        !(card.rank === "2" && card.suit === "c") &&
+        !(card.rank === "2" && card.suit === "d")
     );
   } else {
     throw new Error("only supports 3-5 players");
